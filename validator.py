@@ -107,7 +107,7 @@ def validate_chunk(chunk: list[dict]) -> list[ValidationResult]:
         })
 
     response = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
+        model="claude-opus-4-1",
         max_tokens=4000,
         system=SYSTEM_PROMPT,
         messages=[{

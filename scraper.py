@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 APIFY_TOKEN = os.environ["APIFY_TOKEN"]
-APIFY_ACTOR_ID = "apify/facebook-events-scraper"
+APIFY_ACTOR_ID = "UZBnerCFBo5FgGouO"
 
 # US cities/regions to search — expand as needed
 US_LOCATIONS = [

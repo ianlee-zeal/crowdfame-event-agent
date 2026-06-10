@@ -14,9 +14,7 @@ APIFY_ACTOR_ID = "UZBnerCFBo5FgGouO"
 
 # US cities/regions to search — expand as needed
 US_LOCATIONS = [
-    "Dallas, TX", "Fort Worth, TX", "Arlington, TX", 
-    "Irving, TX", "Plano, TX", "Garland, TX",
-    "Carrollton, TX", "Lewisville, TX", "Denton, TX", "Frisco, TX"
+    "Dallas, TX", "Austin, TX", "Houston, TX"
 ]
 
 

@@ -14,15 +14,9 @@ APIFY_ACTOR_ID = "UZBnerCFBo5FgGouO"
 
 # US cities/regions to search — expand as needed
 US_LOCATIONS = [
-    "New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX",
-    "Phoenix, AZ", "Philadelphia, PA", "San Antonio, TX", "San Diego, CA",
-    "Dallas, TX", "San Jose, CA", "Austin, TX", "Jacksonville, FL",
-    "Fort Worth, TX", "Columbus, OH", "Charlotte, NC", "Indianapolis, IN",
-    "San Francisco, CA", "Seattle, WA", "Denver, CO", "Nashville, TN",
-    "Oklahoma City, OK", "El Paso, TX", "Washington, DC", "Las Vegas, NV",
-    "Louisville, KY", "Memphis, TN", "Portland, OR", "Baltimore, MD",
-    "Milwaukee, WI", "Albuquerque, NM", "Miami, FL", "Atlanta, GA",
-    "Minneapolis, MN", "New Orleans, LA", "Boston, MA", "Detroit, MI"
+    "Dallas, TX", "Fort Worth, TX", "Arlington, TX", 
+    "Irving, TX", "Plano, TX", "Garland, TX",
+    "Carrollton, TX", "Lewisville, TX", "Denton, TX", "Frisco, TX"
 ]
 
 

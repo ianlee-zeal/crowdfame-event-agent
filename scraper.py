@@ -25,7 +25,7 @@ def trigger_apify_run() -> str:
     url = f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs"
     payload = {
         "searchQueries": US_LOCATIONS,
-        "maxEventsPerQuery": 50,
+        "maxEventsPerQuery": 10,
         "maxFutureDate": 90,  # events up to 90 days out
     }
 

@@ -10,11 +10,13 @@ import time
 from datetime import datetime
 
 APIFY_TOKEN = os.environ["APIFY_TOKEN"]
-APIFY_ACTOR_ID = "UZBnerCFBo5FgGouO"
+APIFY_ACTOR_ID = "apify/facebook-events-scraper"
 
-# US cities/regions to search — expand as needed
-US_LOCATIONS = [
-    "Dallas, TX", "Austin, TX", "Houston, TX"
+# DFW search queries
+DFW_SEARCHES = [
+    "events Dallas TX",
+    "events Fort Worth TX",
+    "events Arlington TX",
 ]
 
 
@@ -24,9 +26,8 @@ def trigger_apify_run() -> str:
 
     url = f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs"
     payload = {
-        "searchQueries": US_LOCATIONS,
-        "maxEventsPerQuery": 10,
-        "maxFutureDate": 90,  # events up to 90 days out
+        "search": DFW_SEARCHES,
+        "maxEvents": 50,
     }
 
     resp = httpx.post(
@@ -42,7 +43,7 @@ def trigger_apify_run() -> str:
     return run_id
 
 
-def wait_for_run(run_id: str, poll_interval: int = 30, max_wait: int = 1800) -> str:
+def wait_for_run(run_id: str, poll_interval: int = 15, max_wait: int = 600) -> str:
     """Poll until the Apify run finishes, return the dataset ID."""
     url = f"https://api.apify.com/v2/actor-runs/{run_id}"
     elapsed = 0

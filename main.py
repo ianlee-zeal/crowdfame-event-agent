@@ -65,11 +65,15 @@ def main():
             "approved": len(approved_events),
             "rejected": len(validation_results) - len(approved_events),
         }
-        # Save approved events to logs for artifact upload
+        # Save to logs for artifact upload
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         approved_path = LOGS_DIR / f"approved_events_{timestamp}.json"
         with open(approved_path, "w") as f:
             json.dump(approved_events, f, indent=2, default=str)
+        
+        results_path = LOGS_DIR / f"validation_results_{timestamp}.json"
+        with open(results_path, "w") as f:
+            json.dump(validation_results, f, indent=2, default=str)
     except Exception as e:
         print(f"❌ Validation failed: {e}")
         report["stages"]["validate"] = {"status": "error", "error": str(e)}

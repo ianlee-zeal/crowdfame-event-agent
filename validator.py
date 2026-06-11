@@ -14,14 +14,38 @@ class ValidationResult(TypedDict):
     normalized: dict | None
     reasoning: str
 
-SYSTEM_PROMPT = """You are a strict event legitimacy agent for Crowdfame.
-Evaluate Facebook events for legitimacy.
+SYSTEM_PROMPT = """You are a Crowdfame event validator. Evaluate Facebook events.
 
-REJECT if: spam, MLM, illegal, past event, vague location, gibberish, private, <20 words description
-APPROVE if: real US public event, clear title/location, legitimate organizer
+REJECT if: spam, MLM, past event, vague location, <20 word description, private
+APPROVE if: real US public event, clear title/location/date
 
-For APPROVED events, extract/infer the date/time from the description if timestamps are missing.
-Respond ONLY with JSON array, no markdown."""
+ALWAYS respond with ONLY this JSON format (no markdown, no text outside JSON):
+[
+  {
+    "event_id": "id_string",
+    "legitimate": true/false,
+    "confidence": 0.0-1.0,
+    "flags": ["flag1", "flag2"],
+    "reasoning": "one sentence",
+    "normalized": {
+      "title": "...",
+      "date": "YYYY-MM-DD",
+      "startTime": "YYYY-MM-DDTHH:mm",
+      "endTime": null,
+      "timezone": "America/Chicago",
+      "location": "...",
+      "city": "...",
+      "state": "TX",
+      "description": "...",
+      "sourceUrl": "https://facebook.com/events/...",
+      "posterImageUrl": null,
+      "creatorName": null,
+      "instagramHandle": null,
+      "country": "US"
+    } or null
+  }
+]
+"""
 
 def chunk_events(events: list[dict], chunk_size: int = 15) -> list[list[dict]]:
     return [events[i:i + chunk_size] for i in range(0, len(events), chunk_size)]
@@ -29,7 +53,7 @@ def chunk_events(events: list[dict], chunk_size: int = 15) -> list[list[dict]]:
 def assign_ids(events: list[dict]) -> list[dict]:
     for i, e in enumerate(events):
         if "id" not in e or not e["id"]:
-            e["id"] = e.get("eventId") or e.get("url", f"event_{i}").split("/")[-1] or f"event_{i}"
+            e["id"] = e.get("eventId") or f"event_{i}"
     return events
 
 def validate_chunk(chunk: list[dict]) -> list[ValidationResult]:
@@ -37,13 +61,12 @@ def validate_chunk(chunk: list[dict]) -> list[ValidationResult]:
     for e in chunk:
         slim.append({
             "id": e.get("id"),
-            "title": e.get("name") or e.get("title"),
-            "description": (e.get("description") or "")[:500],
-            "startTimestamp": e.get("startTimestamp") or e.get("start_time"),
-            "location": e.get("location") or e.get("place"),
+            "title": e.get("name") or e.get("title") or "",
+            "description": (e.get("description") or "")[:400],
+            "startTimestamp": e.get("startTimestamp"),
+            "location": e.get("location") or e.get("place") or "",
             "url": e.get("url"),
-            "hasImage": bool(e.get("imageUrl")),
-            "organizer": e.get("hosts") or e.get("organizer"),
+            "organizer": (e.get("hosts") or e.get("organizer") or "")[:100],
         })
 
     response = client.messages.create(
@@ -52,7 +75,7 @@ def validate_chunk(chunk: list[dict]) -> list[ValidationResult]:
         system=SYSTEM_PROMPT,
         messages=[{
             "role": "user",
-            "content": f"Validate these {len(slim)} events. For missing timestamps, extract date/time from description if possible:\n{json.dumps(slim, default=str)}"
+            "content": f"Validate these events. Extract dates from description if timestamp missing. Return ONLY JSON array:\n{json.dumps(slim, default=str)}"
         }]
     )
 
@@ -61,18 +84,18 @@ def validate_chunk(chunk: list[dict]) -> list[ValidationResult]:
 
     try:
         results = json.loads(raw)
-        # Add imageUrl back to normalized events
         for i, r in enumerate(results):
             if r.get("legitimate") and r.get("normalized"):
                 r["normalized"]["posterImageUrl"] = chunk[i].get("imageUrl")
         return results
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, KeyError, IndexError) as e:
+        print(f"    Parse error: {e}")
         return [{
             "event_id": ev.get("id", "unknown"),
             "legitimate": False,
             "confidence": 0.0,
             "flags": ["parse_error"],
-            "reasoning": "Parse error",
+            "reasoning": "Validation error",
             "normalized": None,
         } for ev in chunk]
 
@@ -80,7 +103,7 @@ def deduplicate(results: list[ValidationResult]) -> list[ValidationResult]:
     seen_urls = set()
     deduped = []
     for r in results:
-        if not r["legitimate"] or not r["normalized"]:
+        if not r.get("legitimate") or not r.get("normalized"):
             deduped.append(r)
             continue
         url = r["normalized"].get("sourceUrl", "")
@@ -104,7 +127,7 @@ def run_validation(events: list[dict]) -> tuple[list[ValidationResult], list[dic
         all_results.extend(results)
     
     all_results = deduplicate(all_results)
-    approved = [r["normalized"] for r in all_results if r["legitimate"] and r["normalized"]]
+    approved = [r["normalized"] for r in all_results if r.get("legitimate") and r.get("normalized")]
     rejected = len(all_results) - len(approved)
     
     print(f"  ✅ Approved: {len(approved)}")
